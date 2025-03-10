@@ -51,6 +51,8 @@ urlpatterns = [
 
 from django.contrib import admin
 from django.urls import path, include
+from hotel_transilvania_pdv.pdv.views import listar_quartos
+from .import views 
 
 urlpatterns = [
     path('admin/', admin.site.urls),

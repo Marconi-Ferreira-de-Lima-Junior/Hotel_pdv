@@ -64,7 +64,7 @@ def cadastrar_cliente(request):
 
 @login_required
 def editar_cliente(request, id):
-    cliente = get_object_or_404(Reserva, id=id)
+    cliente = get_object_or_404(Cliente, id=id)
     if request.method == 'POST':
         form = ClienteForm(request.POST, instance=cliente) #cria um formulario preenchido com os dados novos dos clientes que foram enviados pelo usuario, referenciando ao cliente que ja existe  instance = cliente
         if form.is_valid():
@@ -169,10 +169,11 @@ def cadastrar_receitas(request):
     else:
         form = ReceitaForm()
 
-    return render(request, 'hotel_transilvania_pdv/cadastrar_despesas.html', {'form':form})
+    return render(request, 'hotel_transilvania_pdv/cadastrar_receitas.html', {'form':form})
     
 def listar_quartos(request):
     quartos = Quarto.objects.all()
-    return render(request, "quartos/listar.html", {"quartos":quartos})
+    return render(request, 'hotel_transilvania_pdv/quartos/listar.html', {'quartos': quartos})
+
 
 
