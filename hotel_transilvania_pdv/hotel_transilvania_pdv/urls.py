@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .import views
+
+from hotel_transilvania_pdv.pdv.views import listar_quartos
+from .import views 
 
 urlpatterns = [
 
@@ -42,6 +44,9 @@ urlpatterns = [
 
     #relatorios
     path('relatorios/', views.relatorios_view, name='relatorios'),
+
+    #quartos
+    path('quartos/', listar_quartos, name = 'listar_quartos'),
 ]
 
 from django.contrib import admin

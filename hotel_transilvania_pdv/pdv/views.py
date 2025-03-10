@@ -1,8 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login as auth_login, authenticate, logout
-from django.contrib.auth import User 
+from django.contrib.auth.models import User
 from .models import Cliente, Reserva, Quarto, Despesa, Receita
-from .forms import ClienteForm, ReservaForm, UserRegistrationForm
+from .forms import ClienteForm, DespesaForm, QuartoForm, ReceitaForm, ReservaForm, UserRegistrationForm
 
 def login_view(request):
     if request.method == 'POST':
@@ -23,7 +23,7 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_passwordd(form.cleaned_data['password'])
+            user.set_password(form.cleaned_data['password'])
             user.save()
             return redirect('login')
     else:
@@ -46,7 +46,7 @@ def dashboard(request):
 #listando os clientes
 @login_required
 def clientes_view(request):
-    clientes = clientes.objects.all()
+    clientes = Clientes.objects.all()
     return render(request, 'hotel_transilvania_pdv/clientes.html', {'clientes':clientes})
 
 #cadastro de clientes
@@ -64,7 +64,7 @@ def cadastrar_cliente(request):
 
 @login_required
 def editar_cliente(request, id):
-    cliente = get_object_or_404(Cliente, id = id)
+    cliente = get_object_or_404(Reserva, id=id)
     if request.method == 'POST':
         form = ClienteForm(request.POST, instance=cliente) #cria um formulario preenchido com os dados novos dos clientes que foram enviados pelo usuario, referenciando ao cliente que ja existe  instance = cliente
         if form.is_valid():
@@ -75,11 +75,11 @@ def editar_cliente(request, id):
 
     return render (request, 'hotel_transilvania_pdv/editar_cliente.html', {'form': form})
 
-@login_required
+@login_required 
 def excluir_cliente(request, id):
     cliente = get_object_or_404(Cliente, id=id)
     if request.method =='POST':
-        Cliente.delete()
+        cliente.delete()
         return redirect('clientes')
     return render (request, 'hotel_transilvania_pdv/confirmar_exclusao.html', {'cliente':cliente})
 
@@ -104,7 +104,7 @@ def criar_reserva(request):
 
 @login_required
 def editar_reserva(request,id):
-    reserva = get_objects_or_404(Reserva, id=id)
+    reserva = get_object_or_404(Reserva, id=id)
     if request.method == 'POST':
         form = ReservaForm(request.POST, instance = reserva)
         if form.is_valid():
@@ -116,7 +116,7 @@ def editar_reserva(request,id):
 
 @login_required
 def excluir_reserva(request,id):
-    reserva = get_objects_or_404(Reserva, id = id)
+    reserva = get_object_or_404(Reserva, id = id)
     if request.method == 'POST':
         reserva.delete()
         return redirect('reservas')
@@ -131,9 +131,48 @@ def relatorios_view(request):
 
     return render (request, 'hotel_transilvania_pdv/relatorios.html', {
         'total_receitas':total_receitas,
-        'toal_despesas':total_despesas,
+        'total_despesas':total_despesas,
         'saldo_total':saldo_total
     })
 
+@login_required
+def cadastrar_quarto(request):
+    if request.method == 'POST':
+        form = QuartoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect ('quartos')
+    else:
+        form = QuartoForm()
+    return render (request, 'hotel_transilvania_pdv/cadastrar_quarto.html', {'form':form})
+
+@login_required
+def cadastrar_despesas(request):
+    if request.method == 'POST':
+        form = DespesaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('relatorios') #direcionar para relatorios
+    else:
+        form = DespesaForm()
+
+    return render (request, 'hotel_transilvania_pdv/cadastrar_despesas.html', {'form':form})
+
+@login_required
+def cadastrar_receitas(request):
+    if request.method == 'POST':
+        form = ReceitaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('relatorios')
+
+    else:
+        form = ReceitaForm()
+
+    return render(request, 'hotel_transilvania_pdv/cadastrar_despesas.html', {'form':form})
+    
+def listar_quartos(request):
+    quartos = Quarto.objects.all()
+    return render(request, "quartos/listar.html", {"quartos":quartos})
 
 
