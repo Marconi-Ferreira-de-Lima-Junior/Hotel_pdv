@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de gestão do Hotel Transilvania PDV.">
+    <meta name="keywords" content="hotel, pdv, reservas, quartos, gestão">
+    <meta name="author" content="Seu Nome">
+    <title>{% block title %}Hotel PDV{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+</head>
+<body>
+
+    <header>
+        <h1>Hotel PDV</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'hotel_pdv:dashboard' %}" class="{% if request.path == '/' %}active{% endif %}">Início</a></li>
+                <li><a href="{% url 'hotel_pdv:listar_quartos' %}" class="{% if request.path == '/quartos/' %}active{% endif %}">Quartos</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'hotel_pdv:logout' %}">Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'hotel_pdv:login' %}">Login</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Hotel PDV. Todos os direitos reservados.</p>
+    </footer>
+
+</body>
+</html>

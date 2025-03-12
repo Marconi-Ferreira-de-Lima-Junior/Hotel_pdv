@@ -1,0 +1,186 @@
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth import login as auth_login, authenticate, logout
+from django.contrib.auth.models import User
+from .models import Cliente, Reserva, Quarto, Despesa, Receita
+from .forms import ClienteForm, DespesaForm, QuartoForm, ReceitaForm, ReservaForm, UserRegistrationForm
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password  = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            auth_login(request, user)
+            return redirect('dashboard') #direciona para o painel principal caso não haja usuario cadastrado
+        else:
+            return render (request, 'hotel_transilvania_pdv/login.html', {'error': 'Usuário ou Senha inválidos'})
+    return render(request, 'hotel_transilvania_pdv/login.html')
+    
+def logout_view(request):
+    logout(request)
+    return redirect('login') #redireciona para pagina de login apos fazer o logout
+
+def register_view(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            return redirect('login')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'hotel_transilvania_pdv/register.html', {'form':form}) 
+
+#dashboard - reservas e ocupação
+@login_required
+def dashboard(request):
+    total_clientes = Cliente.objects.count()
+    total_reserva = Reserva.objects.count()
+    quartos_disponiveis = Quarto.objects.filter(disponivel=True).count()#filtra os quartos disponiveis
+
+    return render(request,'hotel_transilvania_pdv/dashboard.html', {
+        'total_clientes':total_clientes,
+        'total_reserva':total_reserva,
+        'quartos_disponiveis':quartos_disponiveis   
+    })
+
+#listando os clientes
+@login_required
+def clientes_view(request):
+    clientes = Cliente.objects.all()
+    return render(request, 'hotel_transilvania_pdv/clientes.html', {'clientes':clientes})
+
+#cadastro de clientes
+@login_required
+def cadastrar_cliente(request):
+    if request.method == 'POST':
+        form = ClienteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('clientes')
+    else:
+        form = ClienteForm()
+    
+    return render(request, 'hotel_transilvania_pdv/cadastrar_cliente.html', {'form':form})
+
+@login_required
+def editar_cliente(request, id):
+    cliente = get_object_or_404(Cliente, id=id)
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente) #cria um formulario preenchido com os dados novos dos clientes que foram enviados pelo usuario, referenciando ao cliente que ja existe  instance = cliente
+        if form.is_valid():
+            form.save()
+            return redirect('clientes')
+    else:
+        form = ClienteForm(instance=cliente)
+
+    return render (request, 'hotel_transilvania_pdv/editar_cliente.html', {'form': form})
+
+@login_required 
+def excluir_cliente(request, id):
+    cliente = get_object_or_404(Cliente, id=id)
+    if request.method =='POST':
+        cliente.delete()
+        return redirect('clientes')
+    return render (request, 'hotel_transilvania_pdv/confirmar_exclusao.html', {'cliente':cliente})
+
+#reservas - listar as reservas existentes
+@login_required
+def reservas_view(request):
+    reservas = Reserva.objects.all()
+    return render (request, 'hotel_transilvania_pdv/reservas.html',{'reservas':reservas})
+
+#criar as reservas
+@login_required
+def criar_reserva(request):
+    if request.method == 'POST':
+        form = ReservaForm(request.POST)
+        if form.is_valid():
+            quarto = form.cleaned_data['quarto']
+            if quarto.disponivel: #verifica se o quarto esta disponivel para ser feito a reserva
+                form.save()
+                quarto.disponivel = False
+                quarto.save()
+                return redirect('reservas')
+            else:
+                form.add_error('quarto', 'Este quarto não está disponível.') 
+    else:
+        form = ReservaForm()
+    return render(request, 'hotel_transilvania_pdv/criar_reserva.html', {'form': form})
+
+@login_required
+def editar_reserva(request,id):
+    reserva = get_object_or_404(Reserva, id=id)
+    if request.method == 'POST':
+        form = ReservaForm(request.POST, instance = reserva)
+        if form.is_valid():
+            form.save()
+            return redirect ('reservas')
+    else:
+        form = ReservaForm(instance = reserva)
+    return render (request, 'hotel_transilvania_pdv/editar_reserva.html', {'form':form})
+
+@login_required
+def excluir_reserva(request,id):
+    reserva = get_object_or_404(Reserva, id = id)
+    if request.method == 'POST':
+        reserva.delete()
+        return redirect('reservas')
+    return render (request, 'hotel_transilvania_pdv/confirmar_exclusao.html', {'reserva': reserva})
+
+#faturamento total do hotel
+@login_required
+def relatorios_view(request):
+    total_receitas = sum(receita.valor for receita in Receita.objects.all())
+    total_despesas = sum(despesa.valor for despesa in Despesa.objects.all())
+    saldo_total = total_receitas - total_despesas
+
+    return render (request, 'hotel_transilvania_pdv/relatorios.html', {
+        'total_receitas':total_receitas,
+        'total_despesas':total_despesas,
+        'saldo_total':saldo_total
+    })
+
+@login_required
+def cadastrar_quarto(request):
+    if request.method == 'POST':
+        form = QuartoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect ('quartos')
+    else:
+        form = QuartoForm()
+    return render (request, 'hotel_transilvania_pdv/cadastrar_quarto.html', {'form':form})
+
+@login_required
+def cadastrar_despesas(request):
+    if request.method == 'POST':
+        form = DespesaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('relatorios') #direcionar para relatorios
+    else:
+        form = DespesaForm()
+
+    return render (request, 'hotel_transilvania_pdv/cadastrar_despesas.html', {'form':form})
+
+@login_required
+def cadastrar_receitas(request):
+    if request.method == 'POST':
+        form = ReceitaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('relatorios')
+
+    else:
+        form = ReceitaForm()
+
+    return render(request, 'hotel_transilvania_pdv/cadastrar_receitas.html', {'form':form})
+    
+def listar_quartos(request):
+    quartos = Quarto.objects.all()
+    return render(request, 'hotel_transilvania_pdv/quartos/listar_quartos.html', {'quartos': quartos})
+
+
+
